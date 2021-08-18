@@ -19,7 +19,9 @@ class AuthController extends Controller
            'password'=> ['required', 'string'],
            'name'=> ['required', 'string', 'max:255'],
            'phone_number'=> ['required', 'string', 'max:255'],
+           'role'=> ['integer']
         ]);
+
 
 
         $user = User::create([
@@ -27,9 +29,12 @@ class AuthController extends Controller
            'password'=> bcrypt($fields['password']),
            'name'=> $fields['name'],
            'phone_number'=> $fields['phone_number'],
+           'user_role'=> $fields['role']
         ]);
 
-       $token = $user->createToken(env('TOKEN_AUTHENTICATION'));
+        $role = $fields['role'] === 1 ? "admin" : "user";
+
+        $token = $user->createToken(env('TOKEN_AUTHENTICATION'), [$role]);
 
        return ['success'=> true, "user"=> $user, "token"=>$token->plainTextToken];
     }
@@ -49,16 +54,18 @@ class AuthController extends Controller
            return response(['success'=>false, 'message'=> 'Invalid username or password'], 400);
        }
 
-       $token = $user->createToken(env('TOKEN_AUTHENTICATION'))->plainTextToken;
+       $user_role = $user->user_role === 1 ? "admin" : "user";
+
+       $token = $user->createToken(env('TOKEN_AUTHENTICATION'), [$user_role])->plainTextToken;
 
        return response(['success'=> true, 'user'=> $user, 'token'=> $token], 200);
     }
 
-    public function logout(Request $request) {
-      auth()->user()->tokens()->delete();
+   // public function logout(Request $request) {
+   //    auth()->user()->tokens()->delete();
 
-      Redis::flushDB();
+   //    Redis::flushDB();
 
-      return ['message' => 'Logged out'];
-  }
+   //    return ['message' => 'Logged out'];
+   // }
 }

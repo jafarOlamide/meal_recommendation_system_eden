@@ -4,14 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Meal;
 use App\Models\UserAllergy;
+use App\Http\Traits\UserRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 
 
 class MealController extends Controller
 {
+    use UserRole;
+
     public function store(Request $request)
     {
+        if (!$this->isAdmin($request->user())) {
+            return ['res'=> false, 'message'=> 'Unauthorised access'];
+        }
+
         $request->validate([
             'main_item' => ['required', 'string'],
             'time_type' => ['required', 'string']
@@ -43,8 +50,6 @@ class MealController extends Controller
         foreach ($user_allergies as $user_allergy) {
             array_push($new_user_allergies, $user_allergy['allergy']);
         }
-
-        // $allergies_str = implode(",", $new_user_allergies);
 
         $meal_recommendations = Meal::
         select('meals.id as meal_id', 'meals.main_item', 'meals.time_type AS meal_time')
